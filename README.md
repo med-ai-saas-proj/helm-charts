@@ -5,11 +5,11 @@
 Add this repository to Helm.
 
 ```
-helm repo add gantry https://helm.github.io/examples
+helm repo add gantry https://med-ai-saas-proj.github.io/helm-charts
 ```
 
 Install an example.
 
 ```
-helm install ahoy examples/hello-world
+helm install gantry helm-charts/gantry
 ```
