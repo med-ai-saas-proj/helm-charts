@@ -1,0 +1,154 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/thng292venera/gantry
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8000
+  internalPort: 9000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: gantry.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Application configuration mounted as gantry.toml
+config:
+  stage: "PROD"
+  allowed_origins:
+    - "https://example.com"
+  host: "0.0.0.0"
+  port: 8000
+  internal_port: 9000
+  log_level: "WARNING"
+
+  db:
+    pgvector_connection_uri: "postgresql+asyncpg://gantry:changeme@postgres:5432/gantry"
+    timescale_connection_uri: "postgresql+asyncpg://gantry:changeme@timescaledb:5432/gantry"
+    redis_connection_uri: "redis://redis:6379/0"
+
+  apikey:
+    secret_length: 32
+    permissions:
+      - id: "chat.read"
+        name: "Chat Read"
+        description: "Allow reading chat resources"
+      - id: "chat.run"
+        name: "Chat Run"
+        description: "Allow running chat operations"
+
+  keycloak:
+    server_url: "http://keycloak:8080/"
+    realm_name: "gantry"
+
+  auth:
+    client_id: "gantry-frontend"
+    admin_client_id: "gantry-admin"
+
+  billing:
+    invoice_process_interval_seconds: 60
+    transaction_expire_check_interval_seconds: 60
+
+  user_log:
+    loki_url: "http://loki:3100/"
+
+  conversation:
+    cache_ttl: 600
+    cache_limit: 50
+
+  file_storage:
+    s3_presigned_url_expiry_seconds: 3600
+    redis_cache_expiry_seconds: 3600
+
+  organization:
+    invite_redirect_uri: "https://example.com"
+    deletion_cancel_window_days: 30
+    deletion_worker_interval_seconds: 60
+
+  observability:
+    exporter_otlp_endpoint: "http://otel-collector:4317/"
+    exporter_otlp_protocol: "grpc"
+    traces: "otlp"
+    metrics: "prometheus"
+    logs: "otlp"
+    prometheus_port: 9000
+
+  api_gateway:
+    routes: {}
+    request_timeout: "PT30S"
+
+  rag:
+    embedding_model: "text-embedding-3-small"
+    embedding_openai_base_url: "https://api.openai.com/v1"
+    reranker_model: "text-reranking-001"
+    reranker_base_url: "https://jina.ai/api/v1"
+    supported_langs: "simple"
+    rag_store_dimension: 1536
+    rag_store_index_type: "hnsw"
+
+  ai_gateway:
+    models: {}
+
+# Secrets - values here are base64 encoded when deployed.
+# Use existingSecret to reference a pre-created Secret instead.
+secrets:
+  existingSecret: ""
+  # Values below are only used if existingSecret is empty.
+  apikey_secret: ""
+  keycloak_service_client_id: ""
+  keycloak_service_client_secret: ""
+  billing_stripe_secret_key: ""
+  billing_stripe_webhook_secret: ""
+  file_storage_s3_bucket_name: ""
+  file_storage_s3_region_name: ""
+  file_storage_s3_access_key_id: ""
+  file_storage_s3_secret_access_key: ""
+  file_storage_s3_endpoint_url: ""
+  rag_embedding_openai_api_key: ""
+  rag_reranker_api_key: ""

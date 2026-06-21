@@ -1,13 +1,11 @@
-# Helm Example Repository
-
-Ahoy world!  I'm a Helm repository for example charts.
+# Gantry Helm Charts Repository
 
 ## Get started
 
 Add this repository to Helm.
 
 ```
-helm repo add examples https://helm.github.io/examples
+helm repo add gantry https://helm.github.io/examples
 ```
 
 Install an example.

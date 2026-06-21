@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gantry.fullname" . }}
+  labels:
+    {{- include "gantry.labels" . | nindent 4 }}
+data:
+  gantry.toml: |
+    stage = {{ .Values.config.stage | quote }}
+    allowed_origins = {{ .Values.config.allowed_origins | toJson }}
+    host = {{ .Values.config.host | quote }}
+    port = {{ .Values.config.port }}
+    internal_port = {{ .Values.config.internal_port }}
+    log_level = {{ .Values.config.log_level | quote }}
+
+    [db]
+    pgvector_connection_uri = {{ .Values.config.db.pgvector_connection_uri | quote }}
+    timescale_connection_uri = {{ .Values.config.db.timescale_connection_uri | quote }}
+    redis_connection_uri = {{ .Values.config.db.redis_connection_uri | quote }}
+    {{- if .Values.config.db.cache_ttl }}
+    cache_ttl = {{ .Values.config.db.cache_ttl | quote }}
+    {{- end }}
+
+    [apikey]
+    secret_length = {{ .Values.config.apikey.secret_length }}
+    {{- if .Values.config.apikey.permissions }}
+    permissions = {{ .Values.config.apikey.permissions | toJson }}
+    {{- end }}
+
+    [keycloak]
+    server_url = {{ .Values.config.keycloak.server_url | quote }}
+    realm_name = {{ .Values.config.keycloak.realm_name | quote }}
+
+    [auth]
+    client_id = {{ .Values.config.auth.client_id | quote }}
+    admin_client_id = {{ .Values.config.auth.admin_client_id | quote }}
+
+    [billing]
+    invoice_process_interval_seconds = {{ .Values.config.billing.invoice_process_interval_seconds }}
+    transaction_expire_check_interval_seconds = {{ .Values.config.billing.transaction_expire_check_interval_seconds }}
+
+    [user_log]
+    loki_url = {{ .Values.config.user_log.loki_url | quote }}
+
+    [conversation]
+    cache_ttl = {{ .Values.config.conversation.cache_ttl }}
+    cache_limit = {{ .Values.config.conversation.cache_limit }}
+
+    [file_storage]
+    s3_presigned_url_expiry_seconds = {{ .Values.config.file_storage.s3_presigned_url_expiry_seconds }}
+    redis_cache_expiry_seconds = {{ .Values.config.file_storage.redis_cache_expiry_seconds }}
+
+    [organization]
+    invite_redirect_uri = {{ .Values.config.organization.invite_redirect_uri | quote }}
+    {{- if .Values.config.organization.default_rate_limit }}
+    default_rate_limit = {{ .Values.config.organization.default_rate_limit }}
+    {{- end }}
+    deletion_cancel_window_days = {{ .Values.config.organization.deletion_cancel_window_days }}
+    deletion_worker_interval_seconds = {{ .Values.config.organization.deletion_worker_interval_seconds }}
+
+    [observability]
+    exporter_otlp_endpoint = {{ .Values.config.observability.exporter_otlp_endpoint | quote }}
+    exporter_otlp_protocol = {{ .Values.config.observability.exporter_otlp_protocol | quote }}
+    traces = {{ .Values.config.observability.traces | quote }}
+    metrics = {{ .Values.config.observability.metrics | quote }}
+    logs = {{ .Values.config.observability.logs | quote }}
+    prometheus_port = {{ .Values.config.observability.prometheus_port }}
+
+    [api_gateway]
+    {{- if .Values.config.api_gateway.routes }}
+    routes = {{ .Values.config.api_gateway.routes | toJson }}
+    {{- end }}
+    request_timeout = {{ .Values.config.api_gateway.request_timeout | quote }}
+
+    [rag]
+    embedding_model = {{ .Values.config.rag.embedding_model | quote }}
+    embedding_openai_base_url = {{ .Values.config.rag.embedding_openai_base_url | quote }}
+    reranker_model = {{ .Values.config.rag.reranker_model | quote }}
+    reranker_base_url = {{ .Values.config.rag.reranker_base_url | quote }}
+    supported_langs = {{ .Values.config.rag.supported_langs | quote }}
+    rag_store_dimension = {{ .Values.config.rag.rag_store_dimension }}
+    rag_store_index_type = {{ .Values.config.rag.rag_store_index_type | quote }}
+
+    [ai_gateway]
+    {{- if .Values.config.ai_gateway.models }}
+    [ai_gateway.models]
+    {{- range $name, $spec := .Values.config.ai_gateway.models }}
+    {{ $name | quote }} = {{ $spec | toJson }}
+    {{- end }}
+    {{- end }}
