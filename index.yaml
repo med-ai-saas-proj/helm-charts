@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  gantry:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-06-21T01:29:18.778707886Z"
+    description: Gantry API service
+    digest: b68c2d364d24cc8611b6f4663ce665d0f324f9c19ede9a1c2f1e4d5e18e12914
+    name: gantry
+    type: application
+    urls:
+    - https://github.com/med-ai-saas-proj/helm-charts/releases/download/gantry-0.1.0/gantry-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-06-21T01:29:18.778713234Z"
