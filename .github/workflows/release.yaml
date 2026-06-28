@@ -27,7 +27,6 @@ jobs:
       - name: Add Helm repositories
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts
-          helm repo add bitnami oci://registry-1.docker.io/bitnamicharts
           helm repo update
 
       - name: Run chart-releaser
