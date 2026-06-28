@@ -1,0 +1,11 @@
+{{- if and (index .Values "keycloak" "enabled") (index .Values "keycloak" "keycloakConfigCli" "enabled") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gantry.fullname" . }}-keycloak-realm
+  labels:
+    {{- include "gantry.labels" . | nindent 4 }}
+data:
+  gantry-realm.json: |
+    {{- .Files.Get "gantry-realm.json" | nindent 4 }}
+{{- end }}

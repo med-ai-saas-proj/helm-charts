@@ -60,12 +60,26 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Secret name to use
+ConfigMap name
+*/}}
+{{- define "gantry.configName" -}}
+{{- printf "%s-config" (include "gantry.fullname" .) }}
+{{- end }}
+
+{{/*
+Secret name
 */}}
 {{- define "gantry.secretName" -}}
-{{- if .Values.secrets.existingSecret }}
-{{- .Values.secrets.existingSecret }}
+{{- if .Values.existingSecret }}
+{{- .Values.existingSecret }}
 {{- else }}
-{{- include "gantry.fullname" . }}
+{{- printf "%s-secret" (include "gantry.fullname" .) }}
 {{- end }}
+{{- end }}
+
+{{/*
+Container image
+*/}}
+{{- define "gantry.image" -}}
+{{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
 {{- end }}

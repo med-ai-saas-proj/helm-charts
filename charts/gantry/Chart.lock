@@ -1,0 +1,24 @@
+dependencies:
+- name: keycloak
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 25.2.0
+- name: loki
+  repository: https://grafana.github.io/helm-charts
+  version: 7.0.0
+- name: redis
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 27.0.12
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 18.7.8
+- name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 18.7.8
+- name: nginx
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 25.0.11
+- name: nginx
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 25.0.11
+digest: sha256:4a8ac63f31675096af198081be2b664efb9768211682ce26bdac5668b9f8e4f5
+generated: "2026-06-28T14:05:40.351989898+07:00"

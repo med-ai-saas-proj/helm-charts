@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/thng292venera/gantry
-  pullPolicy: IfNotPresent
-  tag: ""
+  repository: ghcr.io/med-ai-saas-proj/gantry
+  pullPolicy: Always
+  tag: "master"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -14,21 +14,128 @@ serviceAccount:
   annotations: {}
   name: ""
 
-podAnnotations: {}
-podLabels: {}
+# Gantry application config (rendered into TOML ConfigMap)
+config:
+  stage: "PROD"
+  allowed_origins: ["*"]
+  host: "0.0.0.0"
+  port: 8000
+  internal_port: 9000
+  log_level: "WARNING"
 
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
+  db:
+    cache_ttl: "PT1H"
 
-securityContext:
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  capabilities:
-    drop:
-      - ALL
+  apikey:
+    secret_length: 32
+    permissions:
+      - { id: "chat.read", name: "Chat Read", description: "Allow reading chat resources" }
+      - { id: "chat.run", name: "Chat Run", description: "Allow running chat operations" }
+      - { id: "conversation.read", name: "Conversation Read", description: "Allow reading conversations" }
+      - { id: "conversation.write", name: "Conversation Write", description: "Allow writing conversations" }
+      - { id: "conversation.delete", name: "Conversation Delete", description: "Allow deleting conversations" }
+      - { id: "file.read", name: "File Read", description: "Allow reading files" }
+      - { id: "file.write", name: "File Write", description: "Allow uploading files" }
+      - { id: "file.delete", name: "File Delete", description: "Allow deleting files" }
+      - { id: "rag.read", name: "RAG Read", description: "Allow reading RAG resources" }
+      - { id: "rag.write", name: "RAG Write", description: "Allow writing RAG resources" }
+
+  keycloak:
+    server_url: "http://gantry-keycloak:8080/"
+    realm_name: "gantry"
+    service_client_id: "gantry-backend"
+
+  auth:
+    client_id: "gantry-frontend"
+    admin_client_id: "gantry-admin"
+
+  billing:
+    invoice_process_interval_seconds: 60
+    transaction_expire_check_interval_seconds: 60
+
+  user_log:
+    loki_url: "http://gantry-loki:3100/"
+
+  conversation:
+    cache_ttl: 600
+    cache_limit: 50
+
+  file_storage:
+    s3_bucket_name: ""
+    s3_region_name: ""
+    s3_endpoint_url: ""
+    s3_presigned_url_expiry_seconds: 3600
+    redis_cache_expiry_seconds: 3600
+
+  organization:
+    invite_redirect_uri: ""
+    deletion_cancel_window_days: 30
+    deletion_worker_interval_seconds: 60
+
+  observability:
+    exporter_otlp_endpoint: "http://localhost:4317/"
+    exporter_otlp_protocol: "grpc"
+    traces: "disabled"
+    metrics: "prometheus"
+    logs: "disabled"
+    prometheus_port: 9000
+
+  rag:
+    embedding_model: "text-embedding-3-small"
+    embedding_openai_base_url: "https://api.openai.com/v1"
+    reranker_model: ""
+    reranker_base_url: ""
+    supported_langs: "simple"
+    embedding_batch_size: 100
+    rag_store_half_precision: false
+    rag_store_dimension: 1536
+    rag_store_index_type: "hnsw"
+    rag_store_index_params_hnsw_m: 16
+    rag_store_index_params_hnsw_ef_construction: 200
+    rag_store_index_params_ivfflat_lists: 100
+    rag_store_ops_type: "vector_cosine_ops"
+
+  ai_gateway:
+    summary_model: null
+    # models:
+    #   gpt-4:
+    #     provider: openai
+    #     model_id: gpt-4
+    #     context_window: 128000
+    #     base_url: null
+    #     fallback: null
+    models: {}
+
+  api_gateway:
+    request_timeout: "PT30S"
+    routes: {}
+
+# Raw TOML override (if set, used instead of templated config)
+rawConfig: ""
+
+# Secrets injected as environment variables (GANTRY_SERVER__<KEY>)
+secrets: {}
+  # DB__TIMESCALE_CONNECTION_URI: "postgresql+asyncpg://gantry:pass@gantry-gantry-db:5432/gantry"
+  # DB__PGVECTOR_CONNECTION_URI: "postgresql+asyncpg://gantry:pass@gantry-gantry-db:5432/gantry"
+  # DB__REDIS_CONNECTION_URI: "redis://gantry-redis-master:6379/0"
+  # APIKEY__SECRET: "your-minimum-16-char-secret-key"
+  # KEYCLOAK__SERVICE_CLIENT_SECRET: ""
+  # BILLING__STRIPE_SECRET_KEY: ""
+  # BILLING__STRIPE_WEBHOOK_SECRET: ""
+  # RAG__EMBEDDING_OPENAI_API_KEY: ""
+  # RAG__RERANKER_API_KEY: ""
+  # FILE_STORAGE__S3_ACCESS_KEY_ID: ""
+  # FILE_STORAGE__S3_SECRET_ACCESS_KEY: ""
+  # AI_GATEWAY__MODELS__<MODEL_NAME>__API_KEY: ""
+
+# Reference an existing Secret instead of creating one
+existingSecret: ""
+
+# Extra environment variables (beyond secrets)
+extraEnvVars: []
+
+migration:
+  enabled: true
 
 service:
   type: ClusterIP
@@ -47,6 +154,12 @@ ingress:
   tls: []
 
 resources: {}
+  limits:
+    cpu: 1
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
 
 autoscaling:
   enabled: false
@@ -58,97 +171,151 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-# Application configuration mounted as gantry.toml
-config:
-  stage: "PROD"
-  allowed_origins:
-    - "https://example.com"
-  host: "0.0.0.0"
-  port: 8000
-  internal_port: 9000
-  log_level: "WARNING"
+# --- Subchart configuration ---
 
-  db:
-    pgvector_connection_uri: "postgresql+asyncpg://gantry:changeme@postgres:5432/gantry"
-    timescale_connection_uri: "postgresql+asyncpg://gantry:changeme@timescaledb:5432/gantry"
-    redis_connection_uri: "redis://redis:6379/0"
+keycloak:
+  enabled: false
+  keycloakConfigCli:
+    enabled: true
+    existingConfigmap: "gantry-keycloak-realm"
 
-  apikey:
-    secret_length: 32
-    permissions:
-      - id: "chat.read"
-        name: "Chat Read"
-        description: "Allow reading chat resources"
-      - id: "chat.run"
-        name: "Chat Run"
-        description: "Allow running chat operations"
+loki:
+  enabled: false
+  deploymentMode: SingleBinary
+  loki:
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+  singleBinary:
+    replicas: 1
+  read:
+    replicas: 0
+  backend:
+    replicas: 0
+  write:
+    replicas: 0
 
-  keycloak:
-    server_url: "http://keycloak:8080/"
-    realm_name: "gantry"
-
+redis:
+  enabled: false
+  architecture: standalone
   auth:
-    client_id: "gantry-frontend"
-    admin_client_id: "gantry-admin"
+    enabled: false
 
-  billing:
-    invoice_process_interval_seconds: 60
-    transaction_expire_check_interval_seconds: 60
+timescaledb:
+  enabled: false
+  global:
+    security:
+      allowInsecureImages: true
+  image:
+    registry: docker.io
+    repository: timescale/timescaledb-ha
+    tag: pg17
+  auth:
+    username: gantry
+    password: ""
+    database: gantry
+  primary:
+    initdb:
+      scripts:
+        create-extensions.sql: |
+          CREATE EXTENSION IF NOT EXISTS timescaledb;
+          CREATE EXTENSION IF NOT EXISTS vector;
 
-  user_log:
-    loki_url: "http://loki:3100/"
+# Custom PostgreSQL with timescaledb + pgvector + pg_textsearch
+gantry-db:
+  enabled: false
+  global:
+    security:
+      allowInsecureImages: true
+  image:
+    registry: docker.io
+    repository: thng292/timescaledb-with-pg_textsearch
+    tag: latest
+  auth:
+    username: gantry
+    password: ""
+    database: gantry
+  postgresqlSharedPreloadLibraries: "timescaledb,pg_textsearch"
+  primary:
+    initdb:
+      scripts:
+        create-extensions.sql: |
+          CREATE EXTENSION IF NOT EXISTS timescaledb;
+          CREATE EXTENSION IF NOT EXISTS vector;
+          CREATE EXTENSION IF NOT EXISTS pg_textsearch;
 
-  conversation:
-    cache_ttl: 600
-    cache_limit: 50
+user-dashboard:
+  enabled: false
+  staticSiteConfigmap: ""
+  serverBlock: |
+    server {
+      listen 8080;
+      root /app;
+      index index.html;
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+      location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+      }
+    }
+  initContainers:
+    - name: fetch-assets
+      image: alpine:3
+      command:
+        - sh
+        - -c
+        - wget -qO- "https://github.com/med-ai-saas-proj/user-dashboard/releases/download/latest/dist.tar.gz" | tar xz -C /app/
+      volumeMounts:
+        - name: static-files
+          mountPath: /app
+  extraVolumes:
+    - name: static-files
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: static-files
+      mountPath: /app
 
-  file_storage:
-    s3_presigned_url_expiry_seconds: 3600
-    redis_cache_expiry_seconds: 3600
-
-  organization:
-    invite_redirect_uri: "https://example.com"
-    deletion_cancel_window_days: 30
-    deletion_worker_interval_seconds: 60
-
-  observability:
-    exporter_otlp_endpoint: "http://otel-collector:4317/"
-    exporter_otlp_protocol: "grpc"
-    traces: "otlp"
-    metrics: "prometheus"
-    logs: "otlp"
-    prometheus_port: 9000
-
-  api_gateway:
-    routes: {}
-    request_timeout: "PT30S"
-
-  rag:
-    embedding_model: "text-embedding-3-small"
-    embedding_openai_base_url: "https://api.openai.com/v1"
-    reranker_model: "text-reranking-001"
-    reranker_base_url: "https://jina.ai/api/v1"
-    supported_langs: "simple"
-    rag_store_dimension: 1536
-    rag_store_index_type: "hnsw"
-
-  ai_gateway:
-    models: {}
-
-# Secrets - values here are base64 encoded when deployed.
-# Use existingSecret to reference a pre-created Secret instead.
-secrets:
-  existingSecret: ""
-  # Values below are only used if existingSecret is empty.
-  apikey_secret: ""
-  keycloak_service_client_id: ""
-  keycloak_service_client_secret: ""
-  billing_stripe_secret_key: ""
-  billing_stripe_webhook_secret: ""
-  file_storage_s3_bucket_name: ""
-  file_storage_s3_region_name: ""
-  file_storage_s3_access_key_id: ""
-  file_storage_s3_secret_access_key: ""
-  file_storage_s3_endpoint_url: ""
-  rag_embedding_openai_api_key: ""
-  rag_reranker_api_key: ""
+admin-dashboard:
+  enabled: false
+  staticSiteConfigmap: ""
+  serverBlock: |
+    server {
+      listen 8080;
+      root /app;
+      index index.html;
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+      location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+      }
+    }
+  initContainers:
+    - name: fetch-assets
+      image: alpine:3
+      command:
+        - sh
+        - -c
+        - wget -qO- "https://github.com/med-ai-saas-proj/admin-dashboard/releases/download/latest/dist.tar.gz" | tar xz -C /app/
+      volumeMounts:
+        - name: static-files
+          mountPath: /app
+  extraVolumes:
+    - name: static-files
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: static-files
+      mountPath: /app

@@ -1,6 +1,40 @@
 apiVersion: v2
 name: gantry
-description: Gantry API service
+description: Helm chart for the Gantry AI SaaS platform
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "1.0.0"
+
+dependencies:
+  - name: keycloak
+    version: "~25.2"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: keycloak.enabled
+  - name: loki
+    version: "~7.0"
+    repository: https://grafana.github.io/helm-charts
+    condition: loki.enabled
+  - name: redis
+    version: "~27.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: redis.enabled
+  - name: postgresql
+    alias: timescaledb
+    version: "~18.7"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: timescaledb.enabled
+  - name: postgresql
+    alias: gantry-db
+    version: "~18.7"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: gantry-db.enabled
+  - name: nginx
+    alias: user-dashboard
+    version: "~25.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: user-dashboard.enabled
+  - name: nginx
+    alias: admin-dashboard
+    version: "~25.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: admin-dashboard.enabled
